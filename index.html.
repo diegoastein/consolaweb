@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Apps Médicas</title>
+    <style>
+        :root {
+            --primary-color: #007bff; /* Azul médico */
+            --hover-color: #0056b3;
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            margin-top: 20px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+
+        p.subtitle {
+            color: #666;
+            margin: 0;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .app-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            text-decoration: none;
+            color: #333;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #e1e1e1;
+        }
+
+        .app-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+            border-color: var(--primary-color);
+        }
+
+        .icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .app-title {
+            font-weight: bold;
+            font-size: 1.2rem;
+            display: block;
+            margin-bottom: 5px;
+            color: var(--primary-color);
+        }
+
+        .app-desc {
+            font-size: 0.9rem;
+            color: #777;
+        }
+
+        footer {
+            margin-top: auto;
+            padding-top: 40px;
+            font-size: 0.8rem;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Mis Herramientas</h1>
+        <p class="subtitle">Acceso rápido a las aplicaciones</p>
+    </header>
+
+    <div class="grid-container">
+        
+        <a href="Nacimientos/index.html" class="app-card">
+            <span class="icon">👶</span>
+            <span class="app-title">Nacimientos</span>
+            <span class="app-desc">Registro y admisión</span>
+        </a>
+
+        <a href="Neonatologia/index.html" class="app-card">
+            <span class="icon">🏥</span>
+            <span class="app-title">Neonatologia</span>
+            <span class="app-desc">Historias y seguimiento</span>
+        </a>
+
+        <a href="Stock/index.html" class="app-card">
+            <span class="icon">📦</span>
+            <span class="app-title">Control de Stock</span>
+            <span class="app-desc">NPT e Indometacina</span>
+        </a>
+
+        <a href="Licencias/index.html" class="app-card">
+            <span class="icon">📅</span>
+            <span class="app-title">Licencias</span>
+            <span class="app-desc">Gestión de personal</span>
+        </a>
+ <a href="Busqueda/index.html" class="app-card">
+            <span class="icon">📦</span>
+            <span class="app-title">Busqueda</span>
+            <span class="app-desc">Busqueda</span>
+        </a>
+    </div>
+
+    <footer>
+        &copy; 2025 - Gestión Médica
+    </footer>
+
+</body>
+</html>
