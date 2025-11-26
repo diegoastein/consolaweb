@@ -1,1 +1,637 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Nutrición Parenteral</title>
+    
+    <!-- 1. Estilos: Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. Babel (para traducir JSX en el navegador) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <!-- 3. Mapa de Importaciones: Aquí definimos dónde está cada librería -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js",
+        "lucide-react": "https://esm.sh/lucide-react@0.263.1"
+      }
+    }
+    </script>
+
+    <style>
+        /* Ajustes para impresión */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; }
+            .shadow-sm, .shadow-md { box-shadow: none !important; }
+            .border { border: 1px solid #ccc !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800">
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        // --- IMPORTACIONES ---
+        import React, { useState, useEffect, useMemo } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { 
+            Plus, Package, Activity, FileText, Download, Search, Trash2, 
+            Calendar, User, TrendingDown, ClipboardList, AlertCircle, 
+            CheckCircle2, ArrowRightLeft, Pencil, X, Copy, Printer,
+            Cloud, CloudOff, Wifi, WifiOff, Pill
+        } from 'lucide-react';
+
+        import { initializeApp } from "firebase/app";
+        import { 
+            getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, 
+            onSnapshot, enableIndexedDbPersistence 
+        } from "firebase/firestore";
+        import { 
+            getAuth, signInAnonymously, onAuthStateChanged 
+        } from "firebase/auth";
+
+        // ------------------------------------------------------------------
+        // CONFIGURACIÓN DE FIREBASE (¡PEGA TUS DATOS AQUÍ!)
+        // ------------------------------------------------------------------
+         const firebaseConfig = {
+  apiKey: "AIzaSyDHGtoQthls6a4G3bj-UOt_nOGXPwPWSrE",
+  authDomain: "controlntp.firebaseapp.com",
+  projectId: "controlntp",
+  storageBucket: "controlntp.firebasestorage.app",
+  messagingSenderId: "994739641032",
+  appId: "1:994739641032:web:92eac4b082e27acc8363fd"
+};
+        // ------------------------------------------------------------------
+
+        // Inicialización de App (Solo si hay config válida)
+        let db, auth;
+        const appId = "nutri-app-v1"; // ID para separar datos si usas la misma DB
+
+        try {
+            if (firebaseConfig.apiKey !== "TU_API_KEY") {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                
+                // Activar persistencia offline
+                enableIndexedDbPersistence(db).catch((err) => {
+                    if (err.code == 'failed-precondition') {
+                        console.log('Persistencia falló: Múltiples pestañas abiertas.');
+                    } else if (err.code == 'unimplemented') {
+                        console.log('Navegador no soporta persistencia.');
+                    }
+                });
+            }
+        } catch (e) {
+            console.error("Error inicializando Firebase:", e);
+        }
+
+        // --- COMPONENTES UI ---
+        const Card = ({ children, className = "" }) => (
+            <div className={`bg-white rounded-xl shadow-sm border border-slate-200 ${className}`}>
+                {children}
+            </div>
+        );
+
+        const Button = ({ children, onClick, variant = "primary", className = "", disabled = false, type="button", title="" }) => {
+            const baseStyle = "px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 no-print";
+            const variants = {
+                primary: "bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg disabled:opacity-50",
+                secondary: "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300",
+                danger: "bg-red-50 text-red-600 hover:bg-red-100 border border-red-200",
+                success: "bg-emerald-600 text-white hover:bg-emerald-700 shadow-md",
+                warning: "bg-amber-500 text-white hover:bg-amber-600 shadow-md", 
+                outline: "border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50",
+                ghost: "text-slate-500 hover:text-blue-600 hover:bg-blue-50"
+            };
+            return (
+                <button onClick={onClick} type={type} title={title} className={`${baseStyle} ${variants[variant]} ${className}`} disabled={disabled}>
+                    {children}
+                </button>
+            );
+        };
+
+        const formatDate = (dateString) => {
+            if (!dateString) return '-';
+            const [year, month, day] = dateString.split('-');
+            return `${day}/${month}/${year}`;
+        };
+
+        // --- COMPONENTE PRINCIPAL APP ---
+        function App() {
+            const [activeTab, setActiveTab] = useState('stock'); 
+            const [orders, setOrders] = useState([]);
+            const [movements, setMovements] = useState([]);
+            const [notification, setNotification] = useState(null);
+            const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
+            const [editingId, setEditingId] = useState(null);
+            // Modificado: Agregado qtyIndo al formulario de orden
+            const [orderForm, setOrderForm] = useState({ number: '', provider: '', startDate: '', endDate: '', qtySmall: '', qtyLarge: '', qtyIndo: '' });
+            
+            // Estados de Conexión
+            const [user, setUser] = useState(null);
+            const [isOnline, setIsOnline] = useState(navigator.onLine);
+            const [dbReady, setDbReady] = useState(false);
+            const [configError, setConfigError] = useState(firebaseConfig.apiKey === "TU_API_KEY");
+
+            // Umbrales de alerta
+            const LOW_STOCK_THRESHOLD = 5;
+            const LOW_STOCK_THRESHOLD_INDO = 2; // Alerta específica para Indometacina
+
+            // 1. Efecto de Inicio: Auth y Conexión
+            useEffect(() => {
+                if(configError) return;
+
+                const initAuth = async () => {
+                    try { await signInAnonymously(auth); } catch(e) { console.error(e); }
+                };
+                initAuth();
+
+                const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
+                    setUser(u);
+                    setDbReady(!!u);
+                });
+
+                const handleOnline = () => setIsOnline(true);
+                const handleOffline = () => setIsOnline(false);
+                window.addEventListener('online', handleOnline);
+                window.addEventListener('offline', handleOffline);
+
+                return () => {
+                    unsubscribeAuth();
+                    window.removeEventListener('online', handleOnline);
+                    window.removeEventListener('offline', handleOffline);
+                };
+            }, [configError]);
+
+            // 2. Efecto de Datos: Firestore Sync
+            useEffect(() => {
+                if (!user || !db) return;
+
+                const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+                const movementsRef = collection(db, 'artifacts', appId, 'public', 'data', 'movements');
+
+                const unsubOrders = onSnapshot(ordersRef, (snapshot) => {
+                    const loadedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    loadedOrders.sort((a,b) => b.startDate.localeCompare(a.startDate));
+                    setOrders(loadedOrders);
+                });
+
+                const unsubMovements = onSnapshot(movementsRef, (snapshot) => {
+                    const loadedMovements = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    loadedMovements.sort((a,b) => b.date.localeCompare(a.date));
+                    setMovements(loadedMovements);
+                });
+
+                return () => {
+                    unsubOrders();
+                    unsubMovements();
+                };
+            }, [user]);
+
+            // --- LÓGICA DE NEGOCIO ---
+            const showNotification = (message, type = 'success') => {
+                setNotification({ message, type });
+                setTimeout(() => setNotification(null), 4000);
+            };
+
+            const getOrderForDate = (dateString) => {
+                return orders.find(o => dateString >= o.startDate && dateString <= o.endDate);
+            };
+
+            const stockData = useMemo(() => {
+                let totalSmall = 0, totalLarge = 0, totalIndo = 0;
+                let consumedSmall = 0, consumedLarge = 0, consumedIndo = 0;
+
+                orders.forEach(order => {
+                    totalSmall += parseInt(order.qtySmall || 0);
+                    totalLarge += parseInt(order.qtyLarge || 0);
+                    totalIndo += parseInt(order.qtyIndo || 0);
+                });
+
+                movements.forEach(mov => {
+                    if (mov.type === '0-250') consumedSmall++;
+                    if (mov.type === '250-500') consumedLarge++;
+                    if (mov.type === 'Indometacina') consumedIndo++;
+                });
+
+                return {
+                    acquired: { small: totalSmall, large: totalLarge, indo: totalIndo },
+                    consumed: { small: consumedSmall, large: consumedLarge, indo: consumedIndo },
+                    remaining: { 
+                        small: totalSmall - consumedSmall, 
+                        large: totalLarge - consumedLarge,
+                        indo: totalIndo - consumedIndo
+                    }
+                };
+            }, [orders, movements]);
+
+            // --- MANEJADORES ---
+            const handleEditOrder = (order) => {
+                setEditingId(order.id);
+                setOrderForm({
+                    number: order.number, provider: order.provider,
+                    startDate: order.startDate, endDate: order.endDate,
+                    qtySmall: order.qtySmall, qtyLarge: order.qtyLarge,
+                    qtyIndo: order.qtyIndo || '' // Manejar posible valor undefined en registros viejos
+                });
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            const handleCancelEdit = () => {
+                setEditingId(null);
+                setOrderForm({ number: '', provider: '', startDate: '', endDate: '', qtySmall: '', qtyLarge: '', qtyIndo: '' });
+            };
+
+            const handleOrderSubmit = async (e) => {
+                e.preventDefault();
+                if (!user) { showNotification("Sin conexión a BD", "warning"); return; }
+                if (orderForm.startDate > orderForm.endDate) { showNotification('Error: Fechas inválidas', 'error'); return; }
+
+                const hasOverlap = orders.some(o => {
+                    if (editingId && o.id === editingId) return false; 
+                    return (orderForm.startDate <= o.endDate && orderForm.endDate >= o.startDate);
+                });
+                if (hasOverlap) { showNotification('Error: Superposición de fechas', 'error'); return; }
+
+                const payload = {
+                    ...orderForm,
+                    qtySmall: parseInt(orderForm.qtySmall) || 0,
+                    qtyLarge: parseInt(orderForm.qtyLarge) || 0,
+                    qtyIndo: parseInt(orderForm.qtyIndo) || 0,
+                };
+
+                try {
+                    if (editingId) {
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', editingId), payload);
+                        showNotification('Orden actualizada');
+                    } else {
+                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), {
+                            ...payload, createdAt: new Date().toISOString()
+                        });
+                        showNotification('Orden creada');
+                    }
+                    handleCancelEdit();
+                } catch (e) { showNotification('Error al guardar', 'error'); }
+            };
+
+            const deleteOrder = async (id) => {
+                if(confirm('¿Eliminar orden?')) {
+                    try {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', id));
+                        if (editingId === id) handleCancelEdit();
+                        showNotification('Orden eliminada');
+                    } catch (e) { showNotification('Error al eliminar', 'error'); }
+                }
+            };
+
+            const handleAddMovement = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const date = formData.get('date');
+                const activeOrder = getOrderForDate(date);
+                if (!activeOrder && !confirm("Advertencia: No hay OC vigente. ¿Guardar?")) return;
+
+                try {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'movements'), {
+                        date, patient: formData.get('patient'), remito: formData.get('remito'),
+                        type: formData.get('type'), notes: formData.get('notes'), createdAt: new Date().toISOString()
+                    });
+                    e.target.reset();
+                    setFormDate(new Date().toISOString().split('T')[0]);
+                    showNotification('Consumo registrado');
+                } catch (e) { showNotification('Error al guardar', 'error'); }
+            };
+
+            const deleteMovement = async (id) => {
+                if(confirm('¿Eliminar consumo?')) {
+                    try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'movements', id)); showNotification('Eliminado'); } 
+                    catch (e) { showNotification('Error', 'error'); }
+                }
+            };
+
+            // --- PANTALLA DE CARGA / ERROR CONFIG ---
+            if (configError) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+                        <Card className="p-8 max-w-md text-center">
+                            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4"/>
+                            <h2 className="text-xl font-bold text-slate-800 mb-2">Configuración Necesaria</h2>
+                            <p className="text-slate-600 mb-4">Para usar la app, necesitas abrir este archivo <code>index.html</code> en un editor de texto y pegar tus credenciales de Firebase en la sección <code>firebaseConfig</code>.</p>
+                            <div className="text-xs text-left bg-slate-100 p-3 rounded font-mono overflow-auto max-h-32 border">
+                                const firebaseConfig = &#123;<br/>
+                                &nbsp;&nbsp;apiKey: "TU_API_KEY",<br/>
+                                &nbsp;&nbsp;...<br/>
+                                &#125;;
+                            </div>
+                        </Card>
+                    </div>
+                );
+            }
+
+            if (!dbReady) return <div className="min-h-screen flex items-center justify-center text-slate-400">Conectando...</div>;
+
+            // --- RENDER PRINCIPAL ---
+            return (
+                <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-16 print:bg-white print:pb-0">
+                    {notification && (
+                        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white no-print ${notification.type === 'error' ? 'bg-red-500' : 'bg-emerald-600'}`}>
+                            {notification.message}
+                        </div>
+                    )}
+
+                    <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm no-print">
+                        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className="bg-blue-600 text-white p-2 rounded-lg shadow-sm"><Activity size={24} /></div>
+                                <h1 className="text-xl font-bold text-slate-800 hidden sm:block">Control Nutrición</h1>
+                                <h1 className="text-xl font-bold text-slate-800 sm:hidden">Control NP</h1>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className={`flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-full border border-slate-200`}>
+                                    {isOnline ? <Wifi size={16} className="text-emerald-500"/> : <WifiOff size={16} className="text-red-500"/>}
+                                    <span className={`text-xs font-bold ${isOnline ? 'text-emerald-700' : 'text-red-700'}`}>{isOnline ? 'ONLINE' : 'OFFLINE'}</span>
+                                </div>
+                                <nav className="flex gap-1 bg-slate-100 p-1 rounded-lg">
+                                    {[{ id: 'orders', icon: Package, label: 'Órdenes' }, { id: 'movements', icon: ClipboardList, label: 'Consumos' }, { id: 'stock', icon: Activity, label: 'Stock' }, { id: 'reports', icon: FileText, label: 'Reportes' }].map(tab => (
+                                        <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all ${activeTab === tab.id ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                                            <tab.icon size={16} /><span className="hidden md:inline">{tab.label}</span>
+                                        </button>
+                                    ))}
+                                </nav>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-6xl mx-auto px-4 py-8 print:p-0 print:max-w-none">
+                        
+                        {/* TAB STOCK */}
+                        {activeTab === 'stock' && (
+                            <div className="space-y-6 animate-in fade-in duration-500">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2"><Activity className="text-blue-600" /> Estado del Stock</h2>
+                                    {getOrderForDate(new Date().toISOString().split('T')[0]) ? (
+                                        <p className="text-slate-600 font-medium ml-8 mt-1 text-sm bg-blue-50 inline-block px-2 py-1 rounded border border-blue-100">
+                                            OC Vigente: <strong>{getOrderForDate(new Date().toISOString().split('T')[0]).number}</strong>
+                                        </p>
+                                    ) : <p className="text-amber-600 ml-8 text-sm">Sin OC vigente hoy</p>}
+                                </div>
+                                {/* Grid ajustado para 4 tarjetas */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <Card className="p-6 border-l-4 border-l-emerald-500">
+                                        <h3 className="font-semibold mb-2">Bolsas 0-250 ml</h3>
+                                        <div className="flex justify-between text-sm"><span>Licitado:</span><span className="font-bold">{stockData.acquired.small}</span></div>
+                                        <div className="flex justify-between text-sm"><span>Consumo:</span><span className="font-bold text-red-600">-{stockData.consumed.small}</span></div>
+                                        <div className="flex justify-between items-center border-t pt-2 mt-2"><span className="font-bold">Remanente:</span><span className={`text-2xl font-bold ${stockData.remaining.small <= LOW_STOCK_THRESHOLD ? 'text-red-600' : 'text-emerald-600'}`}>{stockData.remaining.small}</span></div>
+                                    </Card>
+                                    <Card className="p-6 border-l-4 border-l-indigo-500">
+                                        <h3 className="font-semibold mb-2">Bolsas 250-500 ml</h3>
+                                        <div className="flex justify-between text-sm"><span>Licitado:</span><span className="font-bold">{stockData.acquired.large}</span></div>
+                                        <div className="flex justify-between text-sm"><span>Consumo:</span><span className="font-bold text-red-600">-{stockData.consumed.large}</span></div>
+                                        <div className="flex justify-between items-center border-t pt-2 mt-2"><span className="font-bold">Remanente:</span><span className={`text-2xl font-bold ${stockData.remaining.large <= LOW_STOCK_THRESHOLD ? 'text-red-600' : 'text-indigo-600'}`}>{stockData.remaining.large}</span></div>
+                                    </Card>
+                                    {/* Nueva Tarjeta Indometacina */}
+                                    <Card className="p-6 border-l-4 border-l-purple-500">
+                                        <h3 className="font-semibold mb-2">Indometacina</h3>
+                                        <div className="flex justify-between text-sm"><span>Licitado:</span><span className="font-bold">{stockData.acquired.indo}</span></div>
+                                        <div className="flex justify-between text-sm"><span>Consumo:</span><span className="font-bold text-red-600">-{stockData.consumed.indo}</span></div>
+                                        <div className="flex justify-between items-center border-t pt-2 mt-2"><span className="font-bold">Remanente:</span><span className={`text-2xl font-bold ${stockData.remaining.indo <= LOW_STOCK_THRESHOLD_INDO ? 'text-red-600' : 'text-purple-600'}`}>{stockData.remaining.indo}</span></div>
+                                    </Card>
+                                    <Card className="p-6 border-l-4 border-l-amber-500 bg-amber-50">
+                                        <h3 className="font-semibold text-amber-800 mb-2 flex items-center gap-2"><AlertCircle size={20}/> Alertas</h3>
+                                        <div className="text-sm text-amber-900 space-y-2">
+                                            {stockData.remaining.small <= LOW_STOCK_THRESHOLD && <p>• Bolsa Peq: Stock Bajo</p>}
+                                            {stockData.remaining.large <= LOW_STOCK_THRESHOLD && <p>• Bolsa Gde: Stock Bajo</p>}
+                                            {stockData.remaining.indo <= LOW_STOCK_THRESHOLD_INDO && <p>• Indometacina: Stock Bajo</p>}
+                                            {stockData.remaining.small > LOW_STOCK_THRESHOLD && 
+                                             stockData.remaining.large > LOW_STOCK_THRESHOLD && 
+                                             stockData.remaining.indo > LOW_STOCK_THRESHOLD_INDO && 
+                                             <p>• Niveles saludables.</p>}
+                                        </div>
+                                    </Card>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB ORDENES */}
+                        {activeTab === 'orders' && (
+                            <div className="space-y-6">
+                                <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2"><Package className="text-blue-600" /> Órdenes de Compra</h2>
+                                <Card className={`p-6 border-t-4 ${editingId ? 'border-t-amber-500 bg-amber-50/50' : 'border-t-blue-500'}`}>
+                                    {/* Grid modificado para incluir el nuevo campo */}
+                                    <form onSubmit={handleOrderSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <div className="md:col-span-4 flex justify-between">
+                                            <h3 className="font-semibold flex items-center gap-2">{editingId ? <><Pencil size={18}/> Editando</> : <><Plus size={18} className="text-blue-600"/> Nueva Orden</>}</h3>
+                                            {editingId && <button type="button" onClick={handleCancelEdit}><X size={18}/></button>}
+                                        </div>
+                                        
+                                        {/* Fila 1 */}
+                                        <div className="md:col-span-2">
+                                            <input required placeholder="Nro Orden" className="border p-2 rounded w-full" value={orderForm.number} onChange={e=>setOrderForm({...orderForm, number: e.target.value})}/>
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <input required placeholder="Proveedor" className="border p-2 rounded w-full" value={orderForm.provider} onChange={e=>setOrderForm({...orderForm, provider: e.target.value})}/>
+                                        </div>
+
+                                        {/* Fila 2 */}
+                                        <div className="md:col-span-2">
+                                            <label className="text-xs text-slate-500">Inicio Vigencia</label>
+                                            <input required type="date" className="border p-2 rounded w-full" value={orderForm.startDate} onChange={e=>setOrderForm({...orderForm, startDate: e.target.value})}/>
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <label className="text-xs text-slate-500">Fin Vigencia</label>
+                                            <input required type="date" className="border p-2 rounded w-full" value={orderForm.endDate} onChange={e=>setOrderForm({...orderForm, endDate: e.target.value})}/>
+                                        </div>
+
+                                        {/* Fila 3: Cantidades */}
+                                        <div className="md:col-span-1">
+                                            <label className="text-xs font-bold text-emerald-600">Bolsas 0-250ml</label>
+                                            <input required type="number" min="0" placeholder="0" className="border p-2 rounded w-full bg-white" value={orderForm.qtySmall} onChange={e=>setOrderForm({...orderForm, qtySmall: e.target.value})}/>
+                                        </div>
+                                        <div className="md:col-span-1">
+                                            <label className="text-xs font-bold text-indigo-600">Bolsas 250-500ml</label>
+                                            <input required type="number" min="0" placeholder="0" className="border p-2 rounded w-full bg-white" value={orderForm.qtyLarge} onChange={e=>setOrderForm({...orderForm, qtyLarge: e.target.value})}/>
+                                        </div>
+                                        <div className="md:col-span-1">
+                                            <label className="text-xs font-bold text-purple-600">Indometacina</label>
+                                            <input required type="number" min="0" placeholder="0" className="border p-2 rounded w-full bg-white" value={orderForm.qtyIndo} onChange={e=>setOrderForm({...orderForm, qtyIndo: e.target.value})}/>
+                                        </div>
+                                        
+                                        <div className="md:col-span-1 flex items-end justify-end">
+                                            <Button type="submit" variant={editingId ? "warning" : "primary"} className="w-full">{editingId ? "Actualizar" : "Guardar"}</Button>
+                                        </div>
+                                    </form>
+                                </Card>
+                                <div className="space-y-3">
+                                    {orders.map(o => (
+                                        <Card key={o.id} className="p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                                            <div className="w-full md:w-auto">
+                                                <div className="font-bold">{o.number} <span className="text-xs font-normal text-slate-500 bg-slate-100 px-2 rounded">{o.provider}</span></div>
+                                                <div className="text-xs text-slate-500">{formatDate(o.startDate)} - {formatDate(o.endDate)}</div>
+                                            </div>
+                                            <div className="flex gap-4 items-center w-full md:w-auto justify-between md:justify-end">
+                                                <div className="text-center"><div className="font-bold text-emerald-600">{o.qtySmall}</div><div className="text-[10px]">0-250</div></div>
+                                                <div className="text-center"><div className="font-bold text-indigo-600">{o.qtyLarge}</div><div className="text-[10px]">250-500</div></div>
+                                                <div className="text-center"><div className="font-bold text-purple-600">{o.qtyIndo || 0}</div><div className="text-[10px]">Indo</div></div>
+                                                <div className="flex gap-1">
+                                                    <button onClick={() => handleEditOrder(o)} className="text-blue-400 hover:text-blue-600 p-1"><Pencil size={16}/></button>
+                                                    <button onClick={() => deleteOrder(o.id)} className="text-slate-300 hover:text-red-500 p-1"><Trash2 size={16}/></button>
+                                                </div>
+                                            </div>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB MOVIMIENTOS */}
+                        {activeTab === 'movements' && (
+                            <div className="space-y-6">
+                                <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2"><TrendingDown className="text-blue-600" /> Consumos</h2>
+                                <Card className="p-6 border-t-4 border-t-blue-500">
+                                    <form onSubmit={handleAddMovement} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <input required type="date" name="date" className="border p-2 rounded w-full" value={formDate} onChange={e=>setFormDate(e.target.value)}/>
+                                        <input required name="patient" placeholder="Paciente" className="border p-2 rounded w-full"/>
+                                        <input name="remito" placeholder="Remito" className="border p-2 rounded w-full"/>
+                                        <select name="type" className="border p-2 rounded w-full bg-white">
+                                            <option value="0-250">0 - 250 ml</option>
+                                            <option value="250-500">250 - 500 ml</option>
+                                            <option value="Indometacina">Indometacina</option>
+                                        </select>
+                                        <input name="notes" placeholder="Notas..." className="border p-2 rounded w-full md:col-span-2"/>
+                                        <div className="md:col-span-2 flex justify-end"><Button type="submit">Registrar</Button></div>
+                                    </form>
+                                </Card>
+                                <div className="bg-white rounded-xl shadow overflow-x-auto">
+                                    <table className="w-full text-sm text-left min-w-[600px]">
+                                        <thead className="bg-slate-100"><tr><th className="p-3">Fecha</th><th className="p-3">Paciente</th><th className="p-3">Insumo</th><th className="p-3">OC</th><th className="p-3"></th></tr></thead>
+                                        <tbody>
+                                            {movements.slice(0, 10).map(m => (
+                                                <tr key={m.id} className="border-b">
+                                                    <td className="p-3">{formatDate(m.date)}</td>
+                                                    <td className="p-3 font-medium">{m.patient}</td>
+                                                    <td className="p-3">
+                                                        {m.type === 'Indometacina' ? 
+                                                            <span className="text-purple-700 font-medium bg-purple-50 px-2 py-1 rounded text-xs">Indometacina</span> : 
+                                                            `${m.type} ml`}
+                                                    </td>
+                                                    <td className="p-3 text-xs text-slate-500">{getOrderForDate(m.date)?.number || "Sin OC"}</td>
+                                                    <td className="p-3 text-right"><button onClick={()=>deleteMovement(m.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={16}/></button></td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB REPORTES */}
+                        {activeTab === 'reports' && <ReportsViewWrapper orders={orders} movements={movements} />}
+                    
+                    </main>
+                </div>
+            );
+        }
+
+        // Componente auxiliar para Reportes
+        function ReportsViewWrapper({ orders, movements }) {
+            const [term, setTerm] = useState('');
+            const [start, setStart] = useState('');
+            const [end, setEnd] = useState('');
+            const [searched, setSearched] = useState(false);
+
+            const filtered = useMemo(() => {
+                if (!searched) return [];
+                return movements.filter(m => {
+                    if (term) {
+                        const lowTerm = term.toLowerCase();
+                        const matchPat = m.patient.toLowerCase().includes(lowTerm);
+                        const matchRem = m.remito?.toLowerCase().includes(lowTerm);
+                        // Buscar OC implícita
+                        const order = orders.find(o => m.date >= o.startDate && m.date <= o.endDate);
+                        const matchOC = order?.number.toLowerCase().includes(lowTerm);
+                        if (!matchPat && !matchRem && !matchOC) return false;
+                    }
+                    if (start && m.date < start) return false;
+                    if (end && m.date > end) return false;
+                    return true;
+                });
+            }, [movements, orders, term, start, end, searched]);
+
+            const doSearch = (e) => { e.preventDefault(); setSearched(true); };
+            
+            const doExport = () => {
+                let csv = "Fecha,Paciente,Remito,Insumo,OC,Notas\n";
+                filtered.forEach(m => {
+                    const oc = orders.find(o => m.date >= o.startDate && m.date <= o.endDate)?.number || "Sin OC";
+                    csv += `${m.date},"${m.patient}","${m.remito||''}",${m.type},${oc},"${m.notes||''}"\n`;
+                });
+                const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url; link.download = "reporte.csv"; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            };
+
+            return (
+                <div className="space-y-6">
+                    <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2 no-print"><FileText className="text-blue-600"/> Reportes</h2>
+                    <div className="hidden print:block mb-4"><h1 className="text-xl font-bold">Reporte de Consumos</h1></div>
+                    
+                    <Card className="p-6 bg-slate-50 no-print">
+                        <form onSubmit={doSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                            <div className="md:col-span-2"><label className="text-sm">Buscar</label><input className="border p-2 rounded w-full" placeholder="Paciente, Remito, OC..." value={term} onChange={e=>setTerm(e.target.value)}/></div>
+                            <div><label className="text-sm">Desde</label><input type="date" className="border p-2 rounded w-full" value={start} onChange={e=>setStart(e.target.value)}/></div>
+                            <div className="flex gap-2">
+                                <div className="flex-1"><label className="text-sm">Hasta</label><input type="date" className="border p-2 rounded w-full" value={end} onChange={e=>setEnd(e.target.value)}/></div>
+                                <Button type="submit" className="mt-auto"><Search size={18}/></Button>
+                            </div>
+                        </form>
+                    </Card>
+
+                    <div className="bg-white rounded-xl shadow border overflow-hidden print:shadow-none print:border-0">
+                        <div className="p-3 border-b bg-slate-50 flex justify-between items-center no-print">
+                            <span>Resultados: <strong>{filtered.length}</strong></span>
+                            <div className="flex gap-2">
+                                <Button onClick={()=>window.print()} variant="outline" className="text-xs h-8 px-2"><Printer size={14}/> PDF</Button>
+                                <Button onClick={doExport} variant="success" className="text-xs h-8 px-2" disabled={!filtered.length}><Download size={14}/> CSV</Button>
+                            </div>
+                        </div>
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-slate-100 print:bg-gray-200"><tr><th className="p-3">Fecha</th><th className="p-3">Paciente</th><th className="p-3">Remito</th><th className="p-3">Insumo</th><th className="p-3">OC</th></tr></thead>
+                            <tbody>
+                                {!searched ? <tr><td colSpan="5" className="p-8 text-center text-slate-400">Use los filtros para buscar</td></tr> :
+                                 filtered.length === 0 ? <tr><td colSpan="5" className="p-8 text-center text-slate-500">Sin resultados</td></tr> :
+                                 filtered.map(m => {
+                                     const oc = orders.find(o => m.date >= o.startDate && m.date <= o.endDate)?.number || "Sin OC";
+                                     return (
+                                        <tr key={m.id} className="border-b print:border-gray-300">
+                                            <td className="p-3">{formatDate(m.date)}</td>
+                                            <td className="p-3 font-medium">{m.patient}</td>
+                                            <td className="p-3">{m.remito || '-'}</td>
+                                            <td className="p-3">{m.type}</td>
+                                            <td className="p-3">{oc}</td>
+                                        </tr>
+                                     );
+                                 })
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        }
+
+        // Renderizar
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
