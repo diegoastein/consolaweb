@@ -1,2 +1,0 @@
-# licenciasweb
-microaplicacion de licencias
