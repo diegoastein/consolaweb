@@ -3,135 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Médico - Inicio</title>
+    <title>Portal Médico - Compacto</title>
     <style>
-        /* Reseteo básico */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        :root {
+            --primary: #1a73e8;
+            --bg: #f0f2f5;
+            --text: #3c4043;
+            --text-light: #70757a;
         }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            /* Tipografía similar a la de la captura (Roboto/Arial) */
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f0f2f5; /* El fondo gris claro de la captura */
-            color: #3c4043;
+            background-color: var(--bg);
+            color: var(--text);
             display: flex;
             flex-direction: column;
             min-height: 100vh;
         }
 
-        /* Estilo de la Barra Superior Azul */
+        /* Cabecera más fina */
         .header-bar {
-            background-color: #1a73e8; /* El azul exacto de tu captura */
-            color: white;
-            padding: 1rem 2rem;
+            background-color: white;
+            border-bottom: 1px solid #ddd;
+            padding: 0.8rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .header-title {
-            font-size: 1.25rem;
-            font-weight: 500;
-        }
-
-        /* Botón estilo "Cerrar Sesión" */
-        .logout-btn {
-            background-color: white;
-            color: #1a73e8;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
+            color: var(--primary);
+            font-size: 1.1rem;
             font-weight: 600;
-            font-size: 0.9rem;
+        }
+
+        .logout-btn {
+            background-color: #f1f3f4;
+            color: var(--text);
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
             cursor: pointer;
-            transition: background-color 0.2s;
         }
 
-        .logout-btn:hover {
-            background-color: #e8f0fe;
-        }
-
-        /* Contenedor principal (el área gris) */
+        /* Contenedor principal */
         .main-content {
             flex: 1;
             padding: 2rem;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-        }
-
-        /* La "hoja blanca" central */
-        .content-box {
-            background-color: #ffffff;
+            max-width: 900px;
+            margin: 0 auto;
             width: 100%;
-            max-width: 1000px; /* Ancho máximo para que no se desparrame en pantallas grandes */
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
-            padding: 2.5rem;
         }
 
-        .dashboard-title {
-            color: #1a73e8; /* Título azul como en el formulario */
-            margin-bottom: 2rem;
-            font-size: 1.8rem;
-            text-align: center;
+        .section-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-light);
+            margin-bottom: 1rem;
+            font-weight: 600;
         }
 
-        /* Grilla de tarjetas de aplicaciones */
+        /* GRILLA COMPACTA */
         .apps-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
+            /* Tarjetas de mínimo 200px, se acomodan solas */
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+            gap: 12px; /* Espacio chiquito entre tarjetas */
         }
 
-        /* Estilo de cada tarjeta/botón de app */
+        /* Estilo de la Tarjeta Compacta */
         .app-card {
             background-color: white;
             border: 1px solid #e0e0e0;
-            border-radius: 12px;
-            padding: 25px;
-            text-align: center;
-            text-decoration: none; /* Sacar el subrayado del link */
-            color: #3c4043;
-            transition: all 0.3s ease;
+            border-radius: 6px;
+            padding: 15px;
+            text-decoration: none;
+            transition: all 0.2s ease;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            justify-content: center;
+            border-left: 4px solid transparent; /* Borde invisible por defecto */
         }
 
+        /* Efecto al pasar el mouse: Borde azul y sombra suave */
         .app-card:hover {
-            border-color: #1a73e8;
-            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.2);
-            transform: translateY(-3px);
-        }
-
-        .app-icon {
-            font-size: 3.5rem;
-            margin-bottom: 15px;
+            border-color: #e0e0e0; /* Mantiene el borde gris */
+            border-left-color: var(--primary); /* Aparece la barrita azul a la izquierda */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transform: translateX(2px); /* Se mueve apenas a la derecha */
         }
 
         .app-title {
-            color: #1a73e8; /* Título de la app en azul */
+            color: var(--text);
             font-weight: 600;
-            font-size: 1.1rem;
-            margin-bottom: 8px;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
         }
 
         .app-desc {
-            font-size: 0.9rem;
-            color: #70757a;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            line-height: 1.3;
         }
         
-        /* Footer simple */
         footer {
             text-align: center;
-            padding: 1rem;
-            font-size: 0.8rem;
-            color: #70757a;
+            padding: 1.5rem;
+            font-size: 0.75rem;
+            color: #9aa0a6;
         }
 
     </style>
@@ -139,62 +122,57 @@
 <body>
 
     <header class="header-bar">
-        <h1 class="header-title">Portal de Gestión Médica</h1>
-        <button class="logout-btn">Cerrar Sesión</button>
+        <h1 class="header-title">Consola Médica</h1>
+        <button class="logout-btn">Salir</button>
     </header>
 
     <main class="main-content">
-        <section class="content-box">
-            <h2 class="dashboard-title">Seleccione una Aplicación</h2>
+        
+        <div class="section-title">Mini aplicaciones web</div>
 
-            <div class="apps-grid">
-                
-                <a href="https://diegoastein.github.io/nacimientos2/" class="app-card">
-                    <span class="app-icon">👶</span>
-                    <span class="app-title">Nacimientos</span>
-                    <span class="app-desc">Registro de nacimientos.</span>
-                </a>
+        <div class="apps-grid">
+            
+            <a href="https://diegoastein.github.io/nacimientos2/" class="app-card">
+                <span class="app-title">Nacimientos</span>
+                <span class="app-desc">Registro de ingresos</span>
+            </a>
 
-                <a href="https://diegoastein.github.io/Neointernacion/" class="app-card">
-                    <span class="app-icon">🏥</span>
-                    <span class="app-title">Neonatología</span>
-                    <span class="app-desc">SInternación y estadística de Neo.</span>
-                </a>
+            <a href="https://diegoastein.github.io/Neointernacion/" class="app-card">
+                <span class="app-title">Neonatología</span>
+                <span class="app-desc">Internación y evoluciones</span>
+            </a>
 
-                <a href="https://diegoastein.github.io/auditorianacimientos/" class="app-card">
-                    <span class="app-icon">📅</span>
-                    <span class="app-title">Reportes </span>
-                    <span class="app-desc">Reportes de internación.</span>
-                </a>
-                <a href="https://diegoastein.github.io/cardio/" class="app-card">
-                    <span class="app-icon">📦</span>
-                    <span class="app-title">Cardiología</span>
-                    <span class="app-desc">Estadística de cardiología</span>
-                </a>
+            <a href="https://diegoastein.github.io/auditorianacimientos/" class="app-card">
+                <span class="app-title">Reportes</span>
+                <span class="app-desc">Auditoría e informes</span>
+            </a>
 
-<a href="https://diegoastein.github.io/Ecos/" class="app-card">
-                    <span class="app-icon">📅</span>
-                    <span class="app-title">Ecografías</span>
-                    <span class="app-desc">Estadísticas de Ecografía.</span>
-                </a>
-                
-                <a href="https://diegoastein.github.io/licenciasweb/" class="app-card">
-                    <span class="app-icon">📅</span>
-                    <span class="app-title">Licencias</span>
-                    <span class="app-desc">Visualización de personal y turnos.</span>
-                </a>
+            <a href="https://diegoastein.github.io/cardio/" class="app-card">
+                <span class="app-title">Cardiología</span>
+                <span class="app-desc">Estadística y pacientes</span>
+            </a>
 
-                <a href="https://diegoastein.github.io/controlntp/" class="app-card">
-                    <span class="app-icon">📅</span>
-                    <span class="app-title">Stock</span>
-                    <span class="app-desc">Stock de NPT e Indometacina</span>
-                </a>
-            </div>
-        </section>
+            <a href="https://diegoastein.github.io/Ecos/" class="app-card">
+                <span class="app-title">Ecografías</span>
+                <span class="app-desc">Estadísticas y pacientes</span>
+            </a>
+
+            <a href="https://diegoastein.github.io/licenciasweb/" class="app-card">
+                <span class="app-title">Licencias</span>
+                <span class="app-desc">Gestión de personal de guardia</span>
+            </a>
+          <a href="https://diegoastein.github.io/controlntp/" class="app-card">
+                <span class="app-title">Stock</span>
+                <span class="app-desc">Control de Stock NPT e Indometacina</span>
+            </a>
+          
+
+        </div>
+
     </main>
     
     <footer>
-        Sistema de Gestión Interna - 2025
+        © 2025 - Sistema de Gestión Interna
     </footer>
 
 </body>
