@@ -1,11 +1,18 @@
 {
   "name": "Consola Web Hospital",
-  "short_name": "Consola",
+  "short_name": "ConsolaWeb",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f0f2f5",
   "theme_color": "#1a73e8",
+  "description": "Portal de gestión interna hospitalaria",
+  "orientation": "portrait-primary",
   "icons": [
+    {
+      "src": "logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
     {
       "src": "icon-192.png",
       "sizes": "192x192",
@@ -21,12 +28,12 @@
     {
       "name": "Neonatología",
       "url": "https://diegoastein.github.io/Neointernacion/",
-      "description": "Internación y evoluciones"
+      "description": "Ir a Internación Neo"
     },
     {
       "name": "Licencias",
       "url": "https://diegoastein.github.io/licenciasweb/",
-      "description": "Gestión de guardia"
+      "description": "Ver Licencias"
     }
   ]
 }
