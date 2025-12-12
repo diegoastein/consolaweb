@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consola Web v3.0</title>
+    <title>Consola Web v4.0</title>
     <style>
         :root {
-            --primary: #2563eb;    /* Azul estándar */
-            --edit-mode: #10b981;  /* Verde para modo edición */
+            --primary: #2563eb;
+            --edit-mode: #10b981;
             --bg: #f3f4f6;
             --card-bg: #ffffff;
             --text: #1f2937;
@@ -22,15 +22,17 @@
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 1100px; /* Un poco más ancho para aprovechar el espacio */
             margin: 0 auto;
+            padding-bottom: 50px;
         }
 
+        /* --- HEADER & CONTROLS --- */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             flex-wrap: wrap;
             gap: 15px;
         }
@@ -38,189 +40,192 @@
         h1 {
             color: var(--primary);
             margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-size: 1.8em;
         }
 
         .data-controls {
             display: flex;
-            gap: 10px;
+            gap: 8px;
         }
 
         .btn-data {
-            padding: 8px 15px;
+            padding: 6px 12px;
             background-color: white;
             color: #4b5563;
             border: 1px solid #d1d5db;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.9em;
+            font-size: 0.85em;
             display: flex;
             align-items: center;
             gap: 5px;
             transition: all 0.2s;
         }
-
         .btn-data:hover { background-color: #e5e7eb; color: #111827; }
-
         #importFile { display: none; }
 
-        /* Formulario */
+        /* --- FORMULARIO --- */
         .input-group {
             background: var(--card-bg);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             display: flex;
-            gap: 15px;
+            gap: 10px;
             flex-wrap: wrap;
             margin-bottom: 30px;
             align-items: end;
             border-left: 5px solid var(--primary);
             transition: border-color 0.3s;
         }
-        
-        /* Cuando estamos editando, el borde se pone verde */
         .input-group.editing { border-left-color: var(--edit-mode); }
 
-        .input-wrapper {
-            flex: 1;
-            min-width: 180px; /* Un poco más angostos para que entren 4 */
-        }
-
+        .input-wrapper { flex: 1; min-width: 160px; }
+        
         label {
             display: block;
-            margin-bottom: 5px;
-            font-size: 0.85em;
+            margin-bottom: 4px;
+            font-size: 0.8em;
             font-weight: bold;
             color: #4b5563;
         }
 
         input {
             width: 100%;
-            padding: 10px;
+            padding: 8px;
             border: 1px solid #d1d5db;
-            border-radius: 6px;
+            border-radius: 5px;
             box-sizing: border-box;
+            font-size: 0.9em;
         }
 
         button#actionBtn {
-            padding: 10px 20px;
+            padding: 8px 15px;
             background-color: var(--primary);
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
-            height: 42px;
+            height: 35px; /* Más compacto */
             transition: all 0.2s;
-            min-width: 120px;
+            min-width: 100px;
+            font-size: 0.9em;
+        }
+        button#actionBtn:hover { opacity: 0.9; }
+
+        /* --- SECCIONES POR CATEGORÍA --- */
+        .category-section {
+            margin-bottom: 35px;
         }
 
-        button#actionBtn:hover { opacity: 0.9; }
-        
-        /* Grilla */
+        .category-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 5px;
+        }
+
+        .category-title {
+            font-size: 1.2em;
+            color: #4b5563;
+            margin: 0;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-count {
+            background: #e5e7eb;
+            color: #6b7280;
+            font-size: 0.7em;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+
+        /* --- GRILLA Y TARJETAS (Compactas) --- */
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
+            /* Reduje de 280px a 220px para hacerlas un ~20% más chicas */
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
         }
 
         .card {
             background: var(--card-bg);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 15px; /* Padding reducido */
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             transition: transform 0.2s, box-shadow 0.2s;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            border-top: 4px solid #cbd5e1;
+            border-top: 3px solid #cbd5e1;
             position: relative;
         }
-        
-        /* Colores de categoría */
+
+        /* Colores de borde según categoría */
         .card[data-cat="Trabajo"] { border-top-color: #ef4444; }
         .card[data-cat="Personal"] { border-top-color: #10b981; }
         .card[data-cat="Salud"] { border-top-color: #3b82f6; }
+        .card[data-cat="Utilidades"] { border-top-color: #f59e0b; }
 
         .card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        .card-header-row {
-             display: flex;
-             justify-content: space-between;
-             align-items: flex-start;
-             margin-bottom: 10px;
-        }
-
-        .category-tag {
-            background-color: #f3f4f6;
-            color: #4b5563;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.7em;
-            text-transform: uppercase;
-            font-weight: bold;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px -2px rgba(0, 0, 0, 0.1);
         }
 
         .card h3 {
-            margin: 0 0 10px 0;
-            font-size: 1.2em;
+            margin: 0 0 5px 0;
+            font-size: 1em; /* Fuente reducida */
             line-height: 1.2;
+            color: #111827;
         }
 
         .card p {
-            font-size: 0.9em;
+            font-size: 0.85em; /* Fuente reducida */
             color: #6b7280;
-            margin: 0 0 20px 0;
-            line-height: 1.4;
-            flex-grow: 1; /* Para que empuje las acciones hacia abajo */
+            margin: 0 0 12px 0;
+            line-height: 1.3;
+            flex-grow: 1;
         }
 
-        /* Zona de acciones inferior */
+        /* Acciones */
         .actions-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-top: 1px solid #f3f4f6;
-            padding-top: 15px;
+            padding-top: 10px;
         }
 
         .open-link-btn {
             text-decoration: none;
-            background-color: var(--primary);
-            color: white !important;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: 600;
+            color: var(--primary);
+            font-size: 0.8em;
+            font-weight: 700;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
         }
-        
-        .admin-actions {
-            display: flex;
-            gap: 5px;
-        }
+        .open-link-btn:hover { text-decoration: underline; }
+
+        .admin-actions { display: flex; gap: 2px; }
 
         .icon-btn {
             background: none;
             border: none;
             cursor: pointer;
-            padding: 5px;
-            font-size: 1.1em;
+            padding: 4px;
+            font-size: 1em; /* Iconos un poco más chicos */
             border-radius: 4px;
-            transition: background 0.2s;
-            color: #6b7280;
+            color: #9ca3af;
+            transition: color 0.2s;
         }
-        
-        .icon-btn:hover { background-color: #f3f4f6; color: var(--text); }
-        .icon-btn.delete:hover { color: #ef4444; background-color: #fee2e2; }
+        .icon-btn:hover { color: var(--text); background-color: #f3f4f6; }
+        .icon-btn.delete:hover { color: #ef4444; }
 
     </style>
 </head>
@@ -238,98 +243,138 @@
 
         <div class="input-group" id="formContainer">
             <div class="input-wrapper">
-                <label>Título de la Web (Nuevo)</label>
-                <input type="text" id="titleInput" placeholder="Ej: Portal Pacientes" required>
+                <label>Título</label>
+                <input type="text" id="titleInput" placeholder="Nombre de la web" required>
             </div>
              <div class="input-wrapper">
                 <label>Link (URL)</label>
                 <input type="url" id="urlInput" placeholder="https://..." required>
             </div>
-            <div class="input-wrapper" style="flex: 0.7;">
+            <div class="input-wrapper">
                 <label>Categoría</label>
                 <input type="text" id="catInput" placeholder="Ej: Trabajo" list="catSuggestions">
                 <datalist id="catSuggestions"></datalist>
             </div>
             <div class="input-wrapper">
-                <label>Descripción Breve</label>
+                <label>Descripción</label>
                 <input type="text" id="descInput" placeholder="Opcional..." maxlength="50">
             </div>
             <button id="actionBtn">Agregar</button>
         </div>
 
-        <div class="grid" id="cardsContainer"></div>
+        <div id="dashboard"></div>
     </div>
 
     <script>
-        // Referencias al DOM
-        const titleInput = document.getElementById('titleInput'); // Nuevo input
+        // DOM Elements
+        const titleInput = document.getElementById('titleInput');
         const urlInput = document.getElementById('urlInput');
         const catInput = document.getElementById('catInput');
         const descInput = document.getElementById('descInput');
         const actionBtn = document.getElementById('actionBtn');
         const formContainer = document.getElementById('formContainer');
-        const cardsContainer = document.getElementById('cardsContainer');
+        const dashboard = document.getElementById('dashboard');
         const catSuggestions = document.getElementById('catSuggestions');
 
-        // Estado de la aplicación
+        // State
         let links = JSON.parse(localStorage.getItem('myLinks')) || [];
-        // Variable crucial para saber si estamos editando (contendrá el índice) o agregando (null)
         let editingIndex = null;
 
-        // --- Funciones Principales ---
+        // --- CORE FUNCTIONS ---
 
         const saveToLocal = () => {
             localStorage.setItem('myLinks', JSON.stringify(links));
-            renderCards();
+            renderDashboard();
             updateSuggestions();
         };
 
-        const renderCards = () => {
-            cardsContainer.innerHTML = '';
-            // Renderizamos en orden inverso (más nuevos arriba)
-            [...links].reverse().forEach((link, index) => {
-                // Calculamos el índice real en el array original
-                const originalIndex = links.length - 1 - index;
+        // Función principal de renderizado (Ahora agrupa)
+        const renderDashboard = () => {
+            dashboard.innerHTML = '';
+            
+            if (links.length === 0) {
+                dashboard.innerHTML = '<p style="text-align:center; color:#9ca3af; margin-top:40px;">No hay links guardados todavía.</p>';
+                return;
+            }
 
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.setAttribute('data-cat', link.category);
-                
-                // Usamos el NUEVO campo link.title
-                card.innerHTML = `
-                    <div class="card-header-row">
-                         <h3>${link.title}</h3>
-                         <span class="category-tag">${link.category}</span>
-                    </div>
-                    <p>${link.description || "Sin descripción"}</p>
-                    
-                    <div class="actions-container">
-                        <a href="${link.url}" target="_blank" class="open-link-btn">
-                            Abrir Web ↗
-                        </a>
-                        
-                        <div class="admin-actions">
-                            <button class="icon-btn" onclick="shareLink(${originalIndex})" title="Compartir">🔗</button>
-                            <button class="icon-btn" onclick="startEdit(${originalIndex})" title="Editar">✏️</button>
-                            <button class="icon-btn delete" onclick="deleteLink(${originalIndex})" title="Borrar">🗑️</button>
-                        </div>
+            // 1. Obtener categorías únicas
+            const categories = [...new Set(links.map(l => l.category))];
+
+            // 2. Ordenar categorías: "Trabajo" primero, luego alfabético
+            categories.sort((a, b) => {
+                const catA = a.toLowerCase();
+                const catB = b.toLowerCase();
+                if (catA === 'trabajo') return -1;
+                if (catB === 'trabajo') return 1;
+                return catA.localeCompare(catB);
+            });
+
+            // 3. Crear secciones por categoría
+            categories.forEach(category => {
+                // Crear estructura de la sección
+                const section = document.createElement('div');
+                section.className = 'category-section';
+
+                // Filtrar links de esta categoría
+                // IMPORTANTE: Guardamos el índice original para poder editar/borrar correctamente
+                const categoryLinks = links
+                    .map((link, index) => ({ ...link, originalIndex: index }))
+                    .filter(link => link.category === category);
+
+                // Crear Header de categoría
+                const headerHtml = `
+                    <div class="category-header">
+                        <h2 class="category-title">${category}</h2>
+                        <span class="badge-count">${categoryLinks.length}</span>
                     </div>
                 `;
-                cardsContainer.appendChild(card);
+                
+                // Crear Grid de tarjetas
+                const gridDiv = document.createElement('div');
+                gridDiv.className = 'grid';
+
+                // Crear tarjetas
+                categoryLinks.forEach(linkObj => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.setAttribute('data-cat', linkObj.category);
+
+                    card.innerHTML = `
+                        <div>
+                            <h3>${linkObj.title}</h3>
+                            <p>${linkObj.description || ""}</p>
+                        </div>
+                        <div class="actions-container">
+                            <a href="${linkObj.url}" target="_blank" class="open-link-btn">
+                                ↗ Abrir
+                            </a>
+                            <div class="admin-actions">
+                                <button class="icon-btn" onclick="shareLink(${linkObj.originalIndex})" title="Copiar">🔗</button>
+                                <button class="icon-btn" onclick="startEdit(${linkObj.originalIndex})" title="Editar">✏️</button>
+                                <button class="icon-btn delete" onclick="deleteLink(${linkObj.originalIndex})" title="Borrar">🗑️</button>
+                            </div>
+                        </div>
+                    `;
+                    gridDiv.appendChild(card);
+                });
+
+                section.innerHTML = headerHtml;
+                section.appendChild(gridDiv);
+                dashboard.appendChild(section);
             });
         };
 
-        // Función unificada para Agregar o Editar
+        // --- ABM ---
+
         actionBtn.addEventListener('click', () => {
             const title = titleInput.value.trim();
             const url = urlInput.value.trim();
-            const category = catInput.value.trim() || 'General';
+            // Normalizamos la categoría (primera letra mayuscula) para que agrupe bien
+            let rawCat = catInput.value.trim() || 'General';
+            const category = rawCat.charAt(0).toUpperCase() + rawCat.slice(1);
             const description = descInput.value.trim();
 
-            if (!title || !url) {
-                alert('Por favor, completá el Título y el Link.');
-                return;
-            }
+            if (!title || !url) return alert('Falta Título o Link');
 
             let finalUrl = url;
             if (!/^https?:\/\//i.test(url)) finalUrl = 'https://' + url;
@@ -337,11 +382,9 @@
             const linkObject = { title, url: finalUrl, category, description };
 
             if (editingIndex !== null) {
-                // MODO EDICIÓN: Actualizamos el existente
                 links[editingIndex] = linkObject;
-                alert('¡Cambios guardados!');
+                alert('Modificado correctamente');
             } else {
-                // MODO AGREGAR: Pusheamos uno nuevo
                 links.push(linkObject);
             }
             
@@ -349,128 +392,90 @@
             saveToLocal();
         });
 
-        // --- Funciones de Acción (Editar, Borrar, Compartir) ---
-
-        // 1. Iniciar Edición
         window.startEdit = (index) => {
-            const linkToEdit = links[index];
-            // Llenamos el formulario con los datos
-            titleInput.value = linkToEdit.title;
-            urlInput.value = linkToEdit.url;
-            catInput.value = linkToEdit.category;
-            descInput.value = linkToEdit.description;
-            
-            // Activamos modo edición
+            const l = links[index];
+            titleInput.value = l.title;
+            urlInput.value = l.url;
+            catInput.value = l.category;
+            descInput.value = l.description;
             editingIndex = index;
             
-            // Cambios visuales
-            actionBtn.innerText = '💾 Guardar Cambios';
+            actionBtn.innerText = '💾 Guardar';
             actionBtn.style.backgroundColor = 'var(--edit-mode)';
             formContainer.classList.add('editing');
-            
-            // Scroll hacia arriba para ver el formulario
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        // 2. Resetear Formulario (vuelve al estado "Agregar")
-        const resetForm = () => {
-            titleInput.value = '';
-            urlInput.value = '';
-            catInput.value = '';
-            descInput.value = '';
-            editingIndex = null;
-            actionBtn.innerText = 'Agregar';
-            actionBtn.style.backgroundColor = ''; // Vuelve al color original del CSS
-            formContainer.classList.remove('editing');
-        };
-
-        // 3. Borrar
         window.deleteLink = (index) => {
             if (confirm(`¿Borrar "${links[index].title}"?`)) {
-                // Si estábamos editando justo el que borramos, reseteamos el form
-                if(editingIndex === index) resetForm(); 
+                if(editingIndex === index) resetForm();
                 links.splice(index, 1);
                 saveToLocal();
             }
         };
 
-        // 4. Compartir (NUEVO)
-        window.shareLink = async (index) => {
-            const link = links[index];
-            const shareData = {
-                title: link.title,
-                text: `Te comparto este link: ${link.description}`,
-                url: link.url
-            };
-
-            try {
-                // Intenta usar la API nativa del celular/navegador
-                await navigator.share(shareData);
-            } catch (err) {
-                // Si no puede (ej: en PC de escritorio), copia al portapapeles
-                const textToCopy = `${link.title}\n${link.url}`;
-                navigator.clipboard.writeText(textToCopy).then(() => {
-                     // Feedback visual temporal en el botón
-                     const btn = document.activeElement;
-                     const originalText = btn.innerText;
-                     btn.innerText = '✅ Copiado';
-                     setTimeout(() => btn.innerText = originalText, 2000);
-                });
-            }
+        const resetForm = () => {
+            titleInput.value = ''; urlInput.value = ''; catInput.value = ''; descInput.value = '';
+            editingIndex = null;
+            actionBtn.innerText = 'Agregar';
+            actionBtn.style.backgroundColor = '';
+            formContainer.classList.remove('editing');
         };
 
-        // --- Utilidades y Carga Inicial ---
+        // --- UTILS ---
+
+        window.shareLink = async (index) => {
+            const link = links[index];
+            try {
+                await navigator.clipboard.writeText(`${link.title}\n${link.url}`);
+                alert('Link copiado al portapapeles');
+            } catch (err) { console.error('Error al copiar', err); }
+        };
+
         const updateSuggestions = () => {
             const categories = [...new Set(links.map(l => l.category))];
             catSuggestions.innerHTML = categories.map(c => `<option value="${c}">`).join('');
         };
 
-        // Funciones de backup (Exportar/Importar - Mantenidas de la versión anterior)
+        // --- BACKUP ---
+
         window.exportData = () => {
             const dataStr = JSON.stringify(links, null, 2);
             const blob = new Blob([dataStr], { type: "application/json" });
             const url = URL.createObjectURL(blob);
-            const date = new Date();
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
+            const d = new Date();
+            const fileName = `consolaweb_${String(d.getDate()).padStart(2,'0')}${String(d.getMonth()+1).padStart(2,'0')}${d.getFullYear()}.json`;
             const a = document.createElement('a');
-            a.href = url;
-            a.download = `consolaweb_${day}${month}${year}.json`; // Cambié el nombre del archivo
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            a.href = url; a.download = fileName;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
         };
 
-        window.importData = (inputElement) => {
-            const file = inputElement.files[0];
+        window.importData = (input) => {
+            const file = input.files[0];
             if (!file) return;
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
-                    const importedLinks = JSON.parse(e.target.result);
-                    if (!Array.isArray(importedLinks)) throw new Error("Formato inválido");
-                    // Migración de datos viejos: si importas un JSON viejo que no tiene "title", usa la URL
-                    importedLinks.forEach(l => { if(!l.title) l.title = new URL(l.url).hostname; });
-
-                    if (confirm(`Se encontraron ${importedLinks.length} links.\nACEPTAR = Reemplazar todo.\nCANCELAR = Sumar a los existentes.`)) {
-                        links = importedLinks;
+                    const imported = JSON.parse(e.target.result);
+                    if (!Array.isArray(imported)) throw new Error("Formato incorrecto");
+                    // Migración simple si faltan títulos
+                    imported.forEach(l => { if(!l.title) l.title = new URL(l.url).hostname; });
+                    
+                    if (confirm(`Hay ${imported.length} links.\nACEPTAR = Reemplazar todo.\nCANCELAR = Sumar.`)) {
+                        links = imported;
                     } else {
-                        links = [...links, ...importedLinks];
+                        links = [...links, ...imported];
                     }
                     saveToLocal();
-                    resetForm();
-                } catch (error) { alert('Error en el archivo JSON.'); }
-                inputElement.value = '';
+                } catch (e) { alert('Error en el archivo'); }
+                input.value = '';
             };
             reader.readAsText(file);
         };
 
-        // Inicializar
-        renderCards();
+        // Init
+        renderDashboard();
         updateSuggestions();
-
     </script>
 </body>
 </html>
