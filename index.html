@@ -3,347 +3,474 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consola Web</title>
-    
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1a73e8">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="icon" type="image/svg+xml" href="logo.svg">
-    <link rel="apple-touch-icon" href="logo.svg">
-
+    <title>Consola Web v3.0</title>
     <style>
         :root {
-            --primary: #1a73e8;
-            --bg: #f0f2f5;
-            --text: #3c4043;
-            --text-light: #70757a;
+            --primary: #2563eb;    /* Azul estándar */
+            --edit-mode: #10b981;  /* Verde para modo edición */
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text: #1f2937;
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg);
             color: var(--text);
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
         }
 
-        /* Cabecera */
-        .header-bar {
-            background-color: white;
-            border-bottom: 1px solid #ddd;
-            padding: 0.8rem 2rem;
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
-        .header-left {
+        h1 {
+            color: var(--primary);
+            margin: 0;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .header-logo {
-            width: 24px;
-            height: 24px;
+        .data-controls {
+            display: flex;
+            gap: 10px;
         }
 
-        .header-title {
-            color: var(--primary);
-            font-size: 1.1rem;
-            font-weight: 600;
+        .btn-data {
+            padding: 8px 15px;
+            background-color: white;
+            color: #4b5563;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
         }
 
-        /* Botón de Instalar (PWA) */
-        .install-btn {
-            display: none; /* Oculto por defecto */
+        .btn-data:hover { background-color: #e5e7eb; color: #111827; }
+
+        #importFile { display: none; }
+
+        /* Formulario */
+        .input-group {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+            align-items: end;
+            border-left: 5px solid var(--primary);
+            transition: border-color 0.3s;
+        }
+        
+        /* Cuando estamos editando, el borde se pone verde */
+        .input-group.editing { border-left-color: var(--edit-mode); }
+
+        .input-wrapper {
+            flex: 1;
+            min-width: 180px; /* Un poco más angostos para que entren 4 */
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.85em;
+            font-weight: bold;
+            color: #4b5563;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        button#actionBtn {
+            padding: 10px 20px;
             background-color: var(--primary);
             color: white;
             border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 500;
-            font-size: 0.9rem;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(26, 115, 232, 0.3);
-            transition: transform 0.2s, background-color 0.2s;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .install-btn:hover {
-            background-color: #1557b0;
-            transform: translateY(-1px);
-        }
-
-        .install-btn:active {
-            transform: translateY(0);
-        }
-
-        /* Contenedor principal */
-        .main-content {
-            flex: 1;
-            padding: 2rem;
-            max-width: 900px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        .section-title {
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-light);
-            margin-bottom: 1rem;
-            font-weight: 600;
-        }
-
-        /* GRILLA COMPACTA */
-        .apps-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
-            gap: 12px;
-        }
-
-        /* Estilo de la Tarjeta Compacta */
-        .app-card {
-            background-color: white;
-            border: 1px solid #e0e0e0;
             border-radius: 6px;
-            padding: 15px;
-            text-decoration: none;
-            transition: all 0.2s ease;
+            cursor: pointer;
+            font-weight: bold;
+            height: 42px;
+            transition: all 0.2s;
+            min-width: 120px;
+        }
+
+        button#actionBtn:hover { opacity: 0.9; }
+        
+        /* Grilla */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            border-left: 4px solid transparent; 
-            /* Variable para el color hover, por defecto azul si falla */
-            --hover-color: var(--primary);
+            justify-content: space-between;
+            border-top: 4px solid #cbd5e1;
             position: relative;
-            overflow: hidden;
-        }
-
-        /* Efecto Ripple simple al hacer click */
-        .app-card:active {
-            background-color: #f8f9fa;
-        }
-
-        /* Asignación de colores */
-        .apps-grid .app-card:nth-child(1) { --hover-color: #1a73e8; } /* Azul */
-        .apps-grid .app-card:nth-child(2) { --hover-color: #188038; } /* Verde */
-        .apps-grid .app-card:nth-child(3) { --hover-color: #e37400; } /* Naranja */
-        .apps-grid .app-card:nth-child(4) { --hover-color: #d93025; } /* Rojo */
-        .apps-grid .app-card:nth-child(5) { --hover-color: #a142f4; } /* Violeta */
-        .apps-grid .app-card:nth-child(6) { --hover-color: #008577; } /* Verde azulado */
-        .apps-grid .app-card:nth-child(7) { --hover-color: #f09300; } /* Amarillo ocuro */
-
-        .apps-grid:last-of-type .app-card:nth-child(1) { --hover-color: #00bcd4; } /* Cyan */
-        .apps-grid:last-of-type .app-card:nth-child(2) { --hover-color: #e91e63; } /* Rosa */
-        .apps-grid:last-of-type .app-card:nth-child(3) { --hover-color: #3f51b5; } /* Indigo */
-        /* El 4to elemento usará el color por defecto (primary) o puedes agregar uno aquí */
-
-        /* Efecto al pasar el mouse */
-        .app-card:hover {
-            border-color: #e0e0e0;
-            border-left-color: var(--hover-color);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
-            transform: translateY(-2px);
-        }
-
-        .app-title {
-            color: var(--text);
-            font-weight: 600;
-            font-size: 0.95rem;
-            margin-bottom: 4px;
-        }
-
-        .app-desc {
-            font-size: 0.8rem;
-            color: var(--text-light);
-            line-height: 1.3;
-        }
-
-        .red-divider {
-            border: 0;
-            border-top: 1px solid #e0e0e0;
-            margin: 2rem 0;
         }
         
-        footer {
-            text-align: center;
-            padding: 1.5rem;
-            font-size: 0.75rem;
-            color: #9aa0a6;
-            background-color: white;
-            border-top: 1px solid #ddd;
-            margin-top: auto;
+        /* Colores de categoría */
+        .card[data-cat="Trabajo"] { border-top-color: #ef4444; }
+        .card[data-cat="Personal"] { border-top-color: #10b981; }
+        .card[data-cat="Salud"] { border-top-color: #3b82f6; }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
-        /* Responsive: Ajustes para móviles */
-        @media (max-width: 600px) {
-            .header-bar {
-                padding: 0.8rem 1rem;
-            }
-            .main-content {
-                padding: 1.5rem 1rem;
-            }
-            /* En móvil las tarjetas ocupan todo el ancho para mejor tacto */
-            .apps-grid {
-                grid-template-columns: 1fr;
-            }
+        .card-header-row {
+             display: flex;
+             justify-content: space-between;
+             align-items: flex-start;
+             margin-bottom: 10px;
         }
+
+        .category-tag {
+            background-color: #f3f4f6;
+            color: #4b5563;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7em;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.2em;
+            line-height: 1.2;
+        }
+
+        .card p {
+            font-size: 0.9em;
+            color: #6b7280;
+            margin: 0 0 20px 0;
+            line-height: 1.4;
+            flex-grow: 1; /* Para que empuje las acciones hacia abajo */
+        }
+
+        /* Zona de acciones inferior */
+        .actions-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #f3f4f6;
+            padding-top: 15px;
+        }
+
+        .open-link-btn {
+            text-decoration: none;
+            background-color: var(--primary);
+            color: white !important;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .admin-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 1.1em;
+            border-radius: 4px;
+            transition: background 0.2s;
+            color: #6b7280;
+        }
+        
+        .icon-btn:hover { background-color: #f3f4f6; color: var(--text); }
+        .icon-btn.delete:hover { color: #ef4444; background-color: #fee2e2; }
+
     </style>
 </head>
 <body>
 
-    <header class="header-bar">
-        <div class="header-left">
-            <svg class="header-logo" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="512" height="512" rx="100" fill="#1A73E8"/>
-                <path d="M256 128V384M128 256H384" stroke="white" stroke-width="64" stroke-linecap="round"/>
-            </svg>
-            <h1 class="header-title">Consola Web</h1>
-        </div>
-        
-        <button id="btnInstalar" class="install-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            Instalar
-        </button>
-    </header>
-
-    <main class="main-content">
-        
-        <div class="section-title">Trabajo</div>
-
-        <div class="apps-grid">
-            
-            <a href="https://diegoastein.github.io/nacimientos2/" class="app-card" target="_blank">
-                <span class="app-title">Nacimientos</span>
-                <span class="app-desc">Registro de ingresos</span>
-            </a>
-
-            <a href="https://diegoastein.github.io/guardias/" class="app-card" target="_blank">
-                <span class="app-title">Guardias</span>
-                <span class="app-desc">Gestion de la guardia externa</span>
-            </a>
-
-            <a href="https://diegoastein.github.io/Neointernacion/" class="app-card" target="_blank">
-                <span class="app-title">Neonatología</span>
-                <span class="app-desc">Internación y evoluciones</span>
-            </a>
-
-            <a href="https://diegoastein.github.io/auditorianacimientos/" class="app-card" target="_blank">
-                <span class="app-title">Reportes</span>
-                <span class="app-desc">Auditoría e informes</span>
-            </a>
-
-            <a href="https://diegoastein.github.io/cardio/" class="app-card" target="_blank">
-                <span class="app-title">Cardiología</span>
-                <span class="app-desc">Estadística y pacientes</span>
-            </a>
-
-            <a href="https://diegoastein.github.io/Ecos/" class="app-card" target="_blank">
-                <span class="app-title">Ecografías</span>
-                <span class="app-desc">Estadísticas y pacientes</span>
-            </a>
-
-            <a href="https://diegoastein.github.io/licenciasweb/" class="app-card" target="_blank">
-                <span class="app-title">Licencias</span>
-                <span class="app-desc">Gestión de personal de guardia</span>
-            </a>
-            
-            <a href="https://diegoastein.github.io/controlntp/" class="app-card" target="_blank">
-                <span class="app-title">Stock</span>
-                <span class="app-desc">Control de Stock NPT e Indometacina</span>
-            </a>
-
+    <div class="container">
+        <div class="header">
+            <h1>💻 Consola Web</h1>
+            <div class="data-controls">
+                <button class="btn-data" onclick="exportData()">⬇️ Exportar</button>
+                <button class="btn-data" onclick="document.getElementById('importFile').click()">⬆️ Importar</button>
+                <input type="file" id="importFile" accept=".json" onchange="importData(this)">
+            </div>
         </div>
 
-        <hr class="red-divider">
-
-        <div class="section-title">Otras apps</div>
-
-        <div class="apps-grid">
-
-            <a href="https://www.neomonitor.pro" class="app-card" target="_blank">
-                <span class="app-title">Neomonitor</span>
-                <span class="app-desc">Simulador de monitor</span>
-            </a>
-
-            <a href="https://www.getneomonitor.pro" class="app-card" target="_blank">
-                <span class="app-title">Get Neomonitor</span>
-                <span class="app-desc">Land page del monitor</span>
-            </a>
-            
-            <a href="https://diegoastein.github.io/ConsultorioCaro/" class="app-card" target="_blank">
-                <span class="app-title">Consultorio Caro</span>
-                <span class="app-desc">Agenda para consultorios</span>
-            </a>
-            
-            <a href="https://www.neomonitor.pro/lic/lic.html" class="app-card" target="_blank">
-                <span class="app-title">Licencias de Pago</span>
-                <span class="app-desc">Gestión de licencias de pago</span>
-            </a>
-            
+        <div class="input-group" id="formContainer">
+            <div class="input-wrapper">
+                <label>Título de la Web (Nuevo)</label>
+                <input type="text" id="titleInput" placeholder="Ej: Portal Pacientes" required>
+            </div>
+             <div class="input-wrapper">
+                <label>Link (URL)</label>
+                <input type="url" id="urlInput" placeholder="https://..." required>
+            </div>
+            <div class="input-wrapper" style="flex: 0.7;">
+                <label>Categoría</label>
+                <input type="text" id="catInput" placeholder="Ej: Trabajo" list="catSuggestions">
+                <datalist id="catSuggestions"></datalist>
+            </div>
+            <div class="input-wrapper">
+                <label>Descripción Breve</label>
+                <input type="text" id="descInput" placeholder="Opcional..." maxlength="50">
+            </div>
+            <button id="actionBtn">Agregar</button>
         </div>
 
-    </main>
-    
-    <footer>
-        © 2025 - Sistema de Gestión Interna
-    </footer>
+        <div class="grid" id="cardsContainer"></div>
+    </div>
 
     <script>
-        // 1. Registro del Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('SW registrado', reg))
-                    .catch(err => console.log('SW error', err));
+        // Referencias al DOM
+        const titleInput = document.getElementById('titleInput'); // Nuevo input
+        const urlInput = document.getElementById('urlInput');
+        const catInput = document.getElementById('catInput');
+        const descInput = document.getElementById('descInput');
+        const actionBtn = document.getElementById('actionBtn');
+        const formContainer = document.getElementById('formContainer');
+        const cardsContainer = document.getElementById('cardsContainer');
+        const catSuggestions = document.getElementById('catSuggestions');
+
+        // Estado de la aplicación
+        let links = JSON.parse(localStorage.getItem('myLinks')) || [];
+        // Variable crucial para saber si estamos editando (contendrá el índice) o agregando (null)
+        let editingIndex = null;
+
+        // --- Funciones Principales ---
+
+        const saveToLocal = () => {
+            localStorage.setItem('myLinks', JSON.stringify(links));
+            renderCards();
+            updateSuggestions();
+        };
+
+        const renderCards = () => {
+            cardsContainer.innerHTML = '';
+            // Renderizamos en orden inverso (más nuevos arriba)
+            [...links].reverse().forEach((link, index) => {
+                // Calculamos el índice real en el array original
+                const originalIndex = links.length - 1 - index;
+
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.setAttribute('data-cat', link.category);
+                
+                // Usamos el NUEVO campo link.title
+                card.innerHTML = `
+                    <div class="card-header-row">
+                         <h3>${link.title}</h3>
+                         <span class="category-tag">${link.category}</span>
+                    </div>
+                    <p>${link.description || "Sin descripción"}</p>
+                    
+                    <div class="actions-container">
+                        <a href="${link.url}" target="_blank" class="open-link-btn">
+                            Abrir Web ↗
+                        </a>
+                        
+                        <div class="admin-actions">
+                            <button class="icon-btn" onclick="shareLink(${originalIndex})" title="Compartir">🔗</button>
+                            <button class="icon-btn" onclick="startEdit(${originalIndex})" title="Editar">✏️</button>
+                            <button class="icon-btn delete" onclick="deleteLink(${originalIndex})" title="Borrar">🗑️</button>
+                        </div>
+                    </div>
+                `;
+                cardsContainer.appendChild(card);
             });
-        }
+        };
 
-        // 2. Lógica del Botón de Instalación
-        let deferredPrompt;
-        const btnInstalar = document.getElementById('btnInstalar');
+        // Función unificada para Agregar o Editar
+        actionBtn.addEventListener('click', () => {
+            const title = titleInput.value.trim();
+            const url = urlInput.value.trim();
+            const category = catInput.value.trim() || 'General';
+            const description = descInput.value.trim();
 
-        window.addEventListener('beforeinstallprompt', (e) => {
-            // Prevenir que Chrome muestre el prompt automático
-            e.preventDefault();
-            // Guardar el evento
-            deferredPrompt = e;
-            // Mostrar el botón
-            btnInstalar.style.display = 'flex';
+            if (!title || !url) {
+                alert('Por favor, completá el Título y el Link.');
+                return;
+            }
+
+            let finalUrl = url;
+            if (!/^https?:\/\//i.test(url)) finalUrl = 'https://' + url;
+
+            const linkObject = { title, url: finalUrl, category, description };
+
+            if (editingIndex !== null) {
+                // MODO EDICIÓN: Actualizamos el existente
+                links[editingIndex] = linkObject;
+                alert('¡Cambios guardados!');
+            } else {
+                // MODO AGREGAR: Pusheamos uno nuevo
+                links.push(linkObject);
+            }
+            
+            resetForm();
+            saveToLocal();
         });
 
-        btnInstalar.addEventListener('click', async () => {
-            if (!deferredPrompt) return;
-            // Mostrar el prompt nativo
-            deferredPrompt.prompt();
-            // Esperar a que el usuario responda
-            const { outcome } = await deferredPrompt.userChoice;
-            console.log(`User response to the install prompt: ${outcome}`);
-            // Limpiar
-            deferredPrompt = null;
-            btnInstalar.style.display = 'none';
-        });
+        // --- Funciones de Acción (Editar, Borrar, Compartir) ---
 
-        window.addEventListener('appinstalled', () => {
-            // Esconder botón si ya se instaló
-            btnInstalar.style.display = 'none';
-            console.log('PWA was installed');
-        });
+        // 1. Iniciar Edición
+        window.startEdit = (index) => {
+            const linkToEdit = links[index];
+            // Llenamos el formulario con los datos
+            titleInput.value = linkToEdit.title;
+            urlInput.value = linkToEdit.url;
+            catInput.value = linkToEdit.category;
+            descInput.value = linkToEdit.description;
+            
+            // Activamos modo edición
+            editingIndex = index;
+            
+            // Cambios visuales
+            actionBtn.innerText = '💾 Guardar Cambios';
+            actionBtn.style.backgroundColor = 'var(--edit-mode)';
+            formContainer.classList.add('editing');
+            
+            // Scroll hacia arriba para ver el formulario
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        // 2. Resetear Formulario (vuelve al estado "Agregar")
+        const resetForm = () => {
+            titleInput.value = '';
+            urlInput.value = '';
+            catInput.value = '';
+            descInput.value = '';
+            editingIndex = null;
+            actionBtn.innerText = 'Agregar';
+            actionBtn.style.backgroundColor = ''; // Vuelve al color original del CSS
+            formContainer.classList.remove('editing');
+        };
+
+        // 3. Borrar
+        window.deleteLink = (index) => {
+            if (confirm(`¿Borrar "${links[index].title}"?`)) {
+                // Si estábamos editando justo el que borramos, reseteamos el form
+                if(editingIndex === index) resetForm(); 
+                links.splice(index, 1);
+                saveToLocal();
+            }
+        };
+
+        // 4. Compartir (NUEVO)
+        window.shareLink = async (index) => {
+            const link = links[index];
+            const shareData = {
+                title: link.title,
+                text: `Te comparto este link: ${link.description}`,
+                url: link.url
+            };
+
+            try {
+                // Intenta usar la API nativa del celular/navegador
+                await navigator.share(shareData);
+            } catch (err) {
+                // Si no puede (ej: en PC de escritorio), copia al portapapeles
+                const textToCopy = `${link.title}\n${link.url}`;
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                     // Feedback visual temporal en el botón
+                     const btn = document.activeElement;
+                     const originalText = btn.innerText;
+                     btn.innerText = '✅ Copiado';
+                     setTimeout(() => btn.innerText = originalText, 2000);
+                });
+            }
+        };
+
+        // --- Utilidades y Carga Inicial ---
+        const updateSuggestions = () => {
+            const categories = [...new Set(links.map(l => l.category))];
+            catSuggestions.innerHTML = categories.map(c => `<option value="${c}">`).join('');
+        };
+
+        // Funciones de backup (Exportar/Importar - Mantenidas de la versión anterior)
+        window.exportData = () => {
+            const dataStr = JSON.stringify(links, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const date = new Date();
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `consolaweb_${day}${month}${year}.json`; // Cambié el nombre del archivo
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
+        window.importData = (inputElement) => {
+            const file = inputElement.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedLinks = JSON.parse(e.target.result);
+                    if (!Array.isArray(importedLinks)) throw new Error("Formato inválido");
+                    // Migración de datos viejos: si importas un JSON viejo que no tiene "title", usa la URL
+                    importedLinks.forEach(l => { if(!l.title) l.title = new URL(l.url).hostname; });
+
+                    if (confirm(`Se encontraron ${importedLinks.length} links.\nACEPTAR = Reemplazar todo.\nCANCELAR = Sumar a los existentes.`)) {
+                        links = importedLinks;
+                    } else {
+                        links = [...links, ...importedLinks];
+                    }
+                    saveToLocal();
+                    resetForm();
+                } catch (error) { alert('Error en el archivo JSON.'); }
+                inputElement.value = '';
+            };
+            reader.readAsText(file);
+        };
+
+        // Inicializar
+        renderCards();
+        updateSuggestions();
+
     </script>
 </body>
 </html>
