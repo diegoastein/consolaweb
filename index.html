@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consola Web v4.0</title>
+    <title>Consola Web Cloud</title>
+    
+    <!-- Toast Notification Style -->
     <style>
         :root {
             --primary: #2563eb;
@@ -22,7 +24,7 @@
         }
 
         .container {
-            max-width: 1100px; /* Un poco más ancho para aprovechar el espacio */
+            max-width: 1100px;
             margin: 0 auto;
             padding-bottom: 50px;
         }
@@ -35,13 +37,32 @@
             margin-bottom: 25px;
             flex-wrap: wrap;
             gap: 15px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
         h1 {
             color: var(--primary);
             margin: 0;
-            font-size: 1.8em;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
+
+        .status-badge {
+            font-size: 0.5em;
+            padding: 3px 8px;
+            border-radius: 12px;
+            background: #e5e7eb;
+            color: #6b7280;
+            vertical-align: middle;
+            font-weight: normal;
+            text-transform: uppercase;
+        }
+        .status-badge.online { background: #dcfce7; color: #166534; }
 
         .data-controls {
             display: flex;
@@ -50,7 +71,7 @@
 
         .btn-data {
             padding: 6px 12px;
-            background-color: white;
+            background-color: #f9fafb;
             color: #4b5563;
             border: 1px solid #d1d5db;
             border-radius: 6px;
@@ -62,7 +83,13 @@
             transition: all 0.2s;
         }
         .btn-data:hover { background-color: #e5e7eb; color: #111827; }
-        #importFile { display: none; }
+        
+        .btn-migrate {
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-color: #bfdbfe;
+        }
+        .btn-migrate:hover { background-color: #dbeafe; }
 
         /* --- FORMULARIO --- */
         .input-group {
@@ -107,18 +134,15 @@
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
-            height: 35px; /* Más compacto */
+            height: 35px;
             transition: all 0.2s;
             min-width: 100px;
             font-size: 0.9em;
         }
         button#actionBtn:hover { opacity: 0.9; }
 
-        /* --- SECCIONES POR CATEGORÍA --- */
-        .category-section {
-            margin-bottom: 35px;
-        }
-
+        /* --- SECCIONES --- */
+        .category-section { margin-bottom: 35px; }
         .category-header {
             display: flex;
             align-items: center;
@@ -126,7 +150,6 @@
             border-bottom: 2px solid #e5e7eb;
             padding-bottom: 5px;
         }
-
         .category-title {
             font-size: 1.2em;
             color: #4b5563;
@@ -135,7 +158,6 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-
         .badge-count {
             background: #e5e7eb;
             color: #6b7280;
@@ -146,17 +168,16 @@
             font-weight: bold;
         }
 
-        /* --- GRILLA Y TARJETAS (Compactas) --- */
+        /* --- GRILLA --- */
         .grid {
             display: grid;
-            /* Reduje de 280px a 220px para hacerlas un ~20% más chicas */
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 15px;
         }
 
         .card {
             background: var(--card-bg);
-            padding: 15px; /* Padding reducido */
+            padding: 15px;
             border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             transition: transform 0.2s, box-shadow 0.2s;
@@ -167,7 +188,6 @@
             position: relative;
         }
 
-        /* Colores de borde según categoría */
         .card[data-cat="Trabajo"] { border-top-color: #ef4444; }
         .card[data-cat="Personal"] { border-top-color: #10b981; }
         .card[data-cat="Salud"] { border-top-color: #3b82f6; }
@@ -180,20 +200,20 @@
 
         .card h3 {
             margin: 0 0 5px 0;
-            font-size: 1em; /* Fuente reducida */
+            font-size: 1em;
             line-height: 1.2;
             color: #111827;
+            word-break: break-word;
         }
 
         .card p {
-            font-size: 0.85em; /* Fuente reducida */
+            font-size: 0.85em;
             color: #6b7280;
             margin: 0 0 12px 0;
             line-height: 1.3;
             flex-grow: 1;
         }
 
-        /* Acciones */
         .actions-container {
             display: flex;
             justify-content: space-between;
@@ -219,7 +239,7 @@
             border: none;
             cursor: pointer;
             padding: 4px;
-            font-size: 1em; /* Iconos un poco más chicos */
+            font-size: 1em;
             border-radius: 4px;
             color: #9ca3af;
             transition: color 0.2s;
@@ -227,21 +247,35 @@
         .icon-btn:hover { color: var(--text); background-color: #f3f4f6; }
         .icon-btn.delete:hover { color: #ef4444; }
 
+        /* Toast */
+        #toast {
+            visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; opacity: 0; transition: opacity 0.3s, bottom 0.3s;
+        }
+        #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+
+        #loader { text-align: center; padding: 40px; color: #6b7280; }
     </style>
 </head>
 <body>
 
+    <div id="toast">Notificación</div>
+
     <div class="container">
         <div class="header">
-            <h1>💻 Consola Web</h1>
+            <h1>
+                💻 Consola Web 
+                <span id="statusBadge" class="status-badge">Conectando...</span>
+            </h1>
             <div class="data-controls">
-                <button class="btn-data" onclick="exportData()">⬇️ Exportar</button>
-                <button class="btn-data" onclick="document.getElementById('importFile').click()">⬆️ Importar</button>
-                <input type="file" id="importFile" accept=".json" onchange="importData(this)">
+                <button id="migrateBtn" class="btn-data btn-migrate" onclick="migrateData()" style="display: none;">
+                    ☁️ Subir Locales
+                </button>
+                <div id="userIdDisplay" style="font-size: 0.8em; color: #9ca3af; align-self: center;"></div>
             </div>
         </div>
 
         <div class="input-group" id="formContainer">
+            <input type="hidden" id="editId">
             <div class="input-wrapper">
                 <label>Título</label>
                 <input type="text" id="titleInput" placeholder="Nombre de la web" required>
@@ -260,68 +294,141 @@
                 <input type="text" id="descInput" placeholder="Opcional..." maxlength="50">
             </div>
             <button id="actionBtn">Agregar</button>
+            <button id="cancelBtn" style="display: none; background: #ef4444; color: white; border: none; border-radius: 5px; padding: 0 15px; cursor: pointer;">Cancelar</button>
         </div>
 
-        <div id="dashboard"></div>
+        <div id="loader">Cargando datos de la nube...</div>
+        <div id="dashboard" style="display: none;"></div>
     </div>
 
-    <script>
-        // DOM Elements
+    <!-- FIREBASE MODULES -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- CREDENCIALES DEL PROYECTO (MISMAS QUE LA OTRA APP) ---
+        const manualConfig = {
+            apiKey: "AIzaSyDV49rOWSXUDq5Dc81hcvC_GzUgVZ-duzY",
+            authDomain: "personal-19e5a.firebaseapp.com",
+            projectId: "personal-19e5a",
+            storageBucket: "personal-19e5a.firebasestorage.app",
+            messagingSenderId: "1001081181470",
+            appId: "1:1001081181470:web:a90cdccb22368c8013a50f"
+        };
+
+        const firebaseConfig = (typeof manualConfig !== 'undefined') 
+            ? manualConfig 
+            : JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        
+        const appId = (typeof manualConfig !== 'undefined' && manualConfig.appId) 
+             ? manualConfig.appId 
+             : (typeof __app_id !== 'undefined' ? __app_id : 'default-app');
+
+        // Init Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // State
+        let currentUser = null;
+        let links = [];
+        let unsubscribe = null;
+
+        // --- DOM Elements ---
         const titleInput = document.getElementById('titleInput');
         const urlInput = document.getElementById('urlInput');
         const catInput = document.getElementById('catInput');
         const descInput = document.getElementById('descInput');
         const actionBtn = document.getElementById('actionBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
         const formContainer = document.getElementById('formContainer');
         const dashboard = document.getElementById('dashboard');
         const catSuggestions = document.getElementById('catSuggestions');
+        const editIdInput = document.getElementById('editId');
+        const loader = document.getElementById('loader');
 
-        // State
-        let links = JSON.parse(localStorage.getItem('myLinks')) || [];
-        let editingIndex = null;
-
-        // --- CORE FUNCTIONS ---
-
-        const saveToLocal = () => {
-            localStorage.setItem('myLinks', JSON.stringify(links));
-            renderDashboard();
-            updateSuggestions();
+        // --- AUTH ---
+        const initAuth = async () => {
+            try {
+                // Lógica igual a la app anterior: priorizar config manual
+                const isManualConfig = typeof manualConfig !== 'undefined';
+                if (!isManualConfig && typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Auth error", error);
+                showToast("Error de autenticación");
+            }
         };
 
-        // Función principal de renderizado (Ahora agrupa)
-        const renderDashboard = () => {
+        initAuth();
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                updateStatus(true);
+                document.getElementById('userIdDisplay').innerText = `ID: ${user.uid.slice(0,5)}`;
+                setupListener(user.uid);
+                checkLocalData(); // Verificar si hay datos viejos para migrar
+            } else {
+                currentUser = null;
+                updateStatus(false);
+            }
+        });
+
+        function updateStatus(online) {
+            const badge = document.getElementById('statusBadge');
+            if (online) {
+                badge.innerText = "En Línea";
+                badge.classList.add('online');
+            } else {
+                badge.innerText = "Desconectado";
+                badge.classList.remove('online');
+            }
+        }
+
+        // --- FIRESTORE ---
+        function setupListener(uid) {
+            // Usamos una colección distinta: 'consola_links'
+            const q = collection(db, 'artifacts', appId, 'users', uid, 'consola_links');
+            
+            unsubscribe = onSnapshot(q, (snapshot) => {
+                links = snapshot.docs.map(doc => ({ firebaseId: doc.id, ...doc.data() }));
+                renderDashboard();
+                updateSuggestions();
+                loader.style.display = 'none';
+                dashboard.style.display = 'block';
+            }, (error) => {
+                console.error(error);
+                showToast("Error cargando datos");
+            });
+        }
+
+        // --- UI RENDER ---
+        function renderDashboard() {
             dashboard.innerHTML = '';
             
             if (links.length === 0) {
-                dashboard.innerHTML = '<p style="text-align:center; color:#9ca3af; margin-top:40px;">No hay links guardados todavía.</p>';
+                dashboard.innerHTML = '<p style="text-align:center; color:#9ca3af; margin-top:40px;">No hay links en la nube.</p>';
                 return;
             }
 
-            // 1. Obtener categorías únicas
             const categories = [...new Set(links.map(l => l.category))];
-
-            // 2. Ordenar categorías: "Trabajo" primero, luego alfabético
             categories.sort((a, b) => {
-                const catA = a.toLowerCase();
-                const catB = b.toLowerCase();
-                if (catA === 'trabajo') return -1;
-                if (catB === 'trabajo') return 1;
-                return catA.localeCompare(catB);
+                if (a.toLowerCase() === 'trabajo') return -1;
+                if (b.toLowerCase() === 'trabajo') return 1;
+                return a.localeCompare(b);
             });
 
-            // 3. Crear secciones por categoría
             categories.forEach(category => {
-                // Crear estructura de la sección
                 const section = document.createElement('div');
                 section.className = 'category-section';
 
-                // Filtrar links de esta categoría
-                // IMPORTANTE: Guardamos el índice original para poder editar/borrar correctamente
-                const categoryLinks = links
-                    .map((link, index) => ({ ...link, originalIndex: index }))
-                    .filter(link => link.category === category);
+                const categoryLinks = links.filter(link => link.category === category);
 
-                // Crear Header de categoría
                 const headerHtml = `
                     <div class="category-header">
                         <h2 class="category-title">${category}</h2>
@@ -329,11 +436,9 @@
                     </div>
                 `;
                 
-                // Crear Grid de tarjetas
                 const gridDiv = document.createElement('div');
                 gridDiv.className = 'grid';
 
-                // Crear tarjetas
                 categoryLinks.forEach(linkObj => {
                     const card = document.createElement('div');
                     card.className = 'card';
@@ -345,13 +450,11 @@
                             <p>${linkObj.description || ""}</p>
                         </div>
                         <div class="actions-container">
-                            <a href="${linkObj.url}" target="_blank" class="open-link-btn">
-                                ↗ Abrir
-                            </a>
+                            <a href="${linkObj.url}" target="_blank" class="open-link-btn">↗ Abrir</a>
                             <div class="admin-actions">
-                                <button class="icon-btn" onclick="shareLink(${linkObj.originalIndex})" title="Copiar">🔗</button>
-                                <button class="icon-btn" onclick="startEdit(${linkObj.originalIndex})" title="Editar">✏️</button>
-                                <button class="icon-btn delete" onclick="deleteLink(${linkObj.originalIndex})" title="Borrar">🗑️</button>
+                                <button class="icon-btn" onclick="window.shareLink('${linkObj.title}', '${linkObj.url}')" title="Copiar">🔗</button>
+                                <button class="icon-btn" onclick="window.startEdit('${linkObj.firebaseId}')" title="Editar">✏️</button>
+                                <button class="icon-btn delete" onclick="window.deleteLink('${linkObj.firebaseId}')" title="Borrar">🗑️</button>
                             </div>
                         </div>
                     `;
@@ -362,120 +465,162 @@
                 section.appendChild(gridDiv);
                 dashboard.appendChild(section);
             });
-        };
+        }
 
-        // --- ABM ---
+        // --- ACTIONS ---
 
-        actionBtn.addEventListener('click', () => {
+        actionBtn.addEventListener('click', async () => {
+            if (!currentUser) return showToast("No hay conexión");
+
             const title = titleInput.value.trim();
             const url = urlInput.value.trim();
-            // Normalizamos la categoría (primera letra mayuscula) para que agrupe bien
             let rawCat = catInput.value.trim() || 'General';
             const category = rawCat.charAt(0).toUpperCase() + rawCat.slice(1);
             const description = descInput.value.trim();
+            const editId = editIdInput.value;
 
             if (!title || !url) return alert('Falta Título o Link');
 
             let finalUrl = url;
             if (!/^https?:\/\//i.test(url)) finalUrl = 'https://' + url;
 
-            const linkObject = { title, url: finalUrl, category, description };
-
-            if (editingIndex !== null) {
-                links[editingIndex] = linkObject;
-                alert('Modificado correctamente');
-            } else {
-                links.push(linkObject);
-            }
+            const linkObject = { title, url: finalUrl, category, description, updatedAt: new Date().toISOString() };
             
-            resetForm();
-            saveToLocal();
+            // UI Feedback inmediato
+            actionBtn.disabled = true;
+            actionBtn.innerText = "Guardando...";
+
+            try {
+                const colRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'consola_links');
+                
+                if (editId) {
+                    await updateDoc(doc(colRef, editId), linkObject);
+                    showToast("Actualizado");
+                } else {
+                    await addDoc(colRef, { ...linkObject, createdAt: new Date().toISOString() });
+                    showToast("Agregado");
+                }
+                resetForm();
+            } catch (e) {
+                console.error(e);
+                showToast("Error al guardar");
+            } finally {
+                actionBtn.disabled = false;
+            }
         });
 
-        window.startEdit = (index) => {
-            const l = links[index];
+        cancelBtn.addEventListener('click', resetForm);
+
+        window.startEdit = (id) => {
+            const l = links.find(x => x.firebaseId === id);
+            if(!l) return;
+
             titleInput.value = l.title;
             urlInput.value = l.url;
             catInput.value = l.category;
             descInput.value = l.description;
-            editingIndex = index;
+            editIdInput.value = id;
             
-            actionBtn.innerText = '💾 Guardar';
+            actionBtn.innerText = '💾 Guardar Cambios';
             actionBtn.style.backgroundColor = 'var(--edit-mode)';
             formContainer.classList.add('editing');
+            cancelBtn.style.display = 'inline-block';
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        window.deleteLink = (index) => {
-            if (confirm(`¿Borrar "${links[index].title}"?`)) {
-                if(editingIndex === index) resetForm();
-                links.splice(index, 1);
-                saveToLocal();
+        window.deleteLink = async (id) => {
+            if (confirm(`¿Borrar este link?`)) {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'consola_links', id));
+                    if(editIdInput.value === id) resetForm();
+                    showToast("Eliminado");
+                } catch (e) { showToast("Error al borrar"); }
             }
         };
 
-        const resetForm = () => {
+        function resetForm() {
             titleInput.value = ''; urlInput.value = ''; catInput.value = ''; descInput.value = '';
-            editingIndex = null;
+            editIdInput.value = '';
             actionBtn.innerText = 'Agregar';
             actionBtn.style.backgroundColor = '';
             formContainer.classList.remove('editing');
-        };
+            cancelBtn.style.display = 'none';
+        }
 
-        // --- UTILS ---
-
-        window.shareLink = async (index) => {
-            const link = links[index];
+        window.shareLink = async (title, url) => {
             try {
-                await navigator.clipboard.writeText(`${link.title}\n${link.url}`);
-                alert('Link copiado al portapapeles');
+                await navigator.clipboard.writeText(`${title}\n${url}`);
+                showToast('Link copiado');
             } catch (err) { console.error('Error al copiar', err); }
         };
 
-        const updateSuggestions = () => {
+        function updateSuggestions() {
             const categories = [...new Set(links.map(l => l.category))];
             catSuggestions.innerHTML = categories.map(c => `<option value="${c}">`).join('');
-        };
+        }
 
-        // --- BACKUP ---
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.className = "show";
+            setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
+        }
 
-        window.exportData = () => {
-            const dataStr = JSON.stringify(links, null, 2);
-            const blob = new Blob([dataStr], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const d = new Date();
-            const fileName = `consolaweb_${String(d.getDate()).padStart(2,'0')}${String(d.getMonth()+1).padStart(2,'0')}${d.getFullYear()}.json`;
-            const a = document.createElement('a');
-            a.href = url; a.download = fileName;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        };
+        // --- MIGRATION LOGIC ---
+        
+        function checkLocalData() {
+            const localLinks = JSON.parse(localStorage.getItem('myLinks')) || [];
+            if (localLinks.length > 0) {
+                document.getElementById('migrateBtn').style.display = 'flex';
+                document.getElementById('migrateBtn').innerText = `☁️ Subir ${localLinks.length} Locales`;
+            }
+        }
 
-        window.importData = (input) => {
-            const file = input.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const imported = JSON.parse(e.target.result);
-                    if (!Array.isArray(imported)) throw new Error("Formato incorrecto");
-                    // Migración simple si faltan títulos
-                    imported.forEach(l => { if(!l.title) l.title = new URL(l.url).hostname; });
-                    
-                    if (confirm(`Hay ${imported.length} links.\nACEPTAR = Reemplazar todo.\nCANCELAR = Sumar.`)) {
-                        links = imported;
-                    } else {
-                        links = [...links, ...imported];
-                    }
-                    saveToLocal();
-                } catch (e) { alert('Error en el archivo'); }
-                input.value = '';
-            };
-            reader.readAsText(file);
-        };
+        window.migrateData = async () => {
+            const localLinks = JSON.parse(localStorage.getItem('myLinks')) || [];
+            if (localLinks.length === 0) return;
 
-        // Init
-        renderDashboard();
-        updateSuggestions();
+            if(!confirm(`Se van a subir ${localLinks.length} links a la base de datos de tu proyecto. ¿Continuar?`)) return;
+
+            const btn = document.getElementById('migrateBtn');
+            btn.innerText = "Subiendo...";
+            btn.disabled = true;
+
+            try {
+                const batch = writeBatch(db);
+                const colRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'consola_links');
+
+                localLinks.forEach(l => {
+                    const newRef = doc(colRef); // ID automático
+                    batch.set(newRef, {
+                        title: l.title || "Sin título",
+                        url: l.url,
+                        category: l.category || "General",
+                        description: l.description || "",
+                        createdAt: new Date().toISOString(),
+                        migrated: true
+                    });
+                });
+
+                await batch.commit();
+                
+                showToast("¡Migración exitosa!");
+                
+                if(confirm("¿Borrar datos locales para limpiar?")) {
+                    localStorage.removeItem('myLinks');
+                    btn.style.display = 'none';
+                } else {
+                    btn.innerText = "☁️ Subir Locales";
+                    btn.disabled = false;
+                }
+
+            } catch (e) {
+                console.error(e);
+                alert("Error subiendo datos. Revisar consola.");
+                btn.innerText = "Error";
+            }
+        }
+
     </script>
 </body>
 </html>
